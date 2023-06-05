@@ -55,6 +55,7 @@ class LoginWidget(QWidget):
 
             if user is not None and user["password"] == password:
                 self.stacked_widget.setCurrentIndex(1)  # Switch to the user info page
+                self.stacked_widget.currentWidget().set_username(username)  # Pass the username to UserInfoWidget
 
 
 class UserInfoWidget(QWidget):
@@ -66,13 +67,15 @@ class UserInfoWidget(QWidget):
     def setup_ui(self):
         layout = QVBoxLayout()
 
-        label_name = QLabel()
-        label_surname = QLabel()
-        label_books = QLabel()
+        self.label_name = QLabel()
+        self.label_surname = QLabel()
+        self.label_joindate = QLabel()
+        self.label_books = QLabel()
 
-        layout.addWidget(label_name)
-        layout.addWidget(label_surname)
-        layout.addWidget(label_books)
+        layout.addWidget(self.label_name)
+        layout.addWidget(self.label_surname)
+        layout.addWidget(self.label_joindate)
+        layout.addWidget(self.label_books)
 
         button_logout = QPushButton("Logout")
         button_logout.clicked.connect(self.logout)
@@ -80,13 +83,35 @@ class UserInfoWidget(QWidget):
 
         self.setLayout(layout)
 
-        username = database.child("users").shallow().get().val()
-        if username is not None:
-            user_info = database.child("users").child(username).get().val()
-            if user_info is not None:
-                label_name.setText(f"Name: {user_info['name']}")
-                label_surname.setText(f"Surname: {user_info['surname']}")
-                label_books.setText(f"Books Borrowed: {user_info['books_borrowed']}")
+    def set_username(self, username):
+        self.username = username
+        self.load_user_info()
+
+    def load_user_info(self):
+        user_info = database.child("users").child(self.username).get().val()
+        if user_info is not None:
+            self.label_name.setText(f"Name: {user_info['name']}")
+            self.label_surname.setText(f"Surname: {user_info['surname']}")
+            self.label_joindate.setText(f"Join date: {user_info['joindate']}")
+            
+            books_borrowed = user_info.get('books_borrowed', [])
+            books_text = "Books Borrowed:\n"
+
+            # Pobranie informacji o książkach na podstawie ich ID
+            for book_id in books_borrowed:
+                books_table = database.child("books")
+                booklocation = books_table.child(book_id)
+                book_info = booklocation.get().val()
+                print(book_id)
+                print(book_info)
+
+                if book_info is not None:
+                    book_name = book_info.get('book_name', '')
+                    books_text += f"ID: {book_id}, Name: {book_name}\n"
+
+            
+            self.label_books.setText(books_text)
+
 
     def logout(self):
         self.stacked_widget.setCurrentIndex(0)  # Switch back to the login page
