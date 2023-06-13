@@ -1,9 +1,8 @@
 import sys
 import pyrebase
-from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QStackedWidget, QTableWidgetItem
+from PyQt5.QtWidgets import QApplication, QTableWidget,QMainWindow, QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QStackedWidget, QTableWidgetItem
 from PyQt5.QtCore import Qt
 
-# Konfiguracja połączenia z bazą danych Firebase
 config = {
   "apiKey": "AIzaSyBSA3r4wQ_kf5SgzImGeX6eQxL6rjvBNsE",
   "authDomain": "bibliotekafirebase-9a68f.firebaseapp.com",
@@ -48,16 +47,13 @@ class LoginWidget(QWidget):
         username = self.edit_username.text()
         password = self.edit_password.text()
 
-        # Perform login validation logic here
-        # For simplicity, let's just check if username and password are not empty
         if username and password:
             user = database.child("users").child(username).get().val()
 
             if user is not None and user["password"] == password:
-                self.stacked_widget.setCurrentIndex(1)  # Switch to the user info page
-                self.stacked_widget.currentWidget().set_username(username)  # Pass the username to UserInfoWidget
-
-
+                self.stacked_widget.setCurrentIndex(1)
+                self.stacked_widget.currentWidget().set_username(username)
+global finger
 class UserInfoWidget(QWidget):
     def __init__(self, stacked_widget):
         super().__init__()
@@ -72,16 +68,27 @@ class UserInfoWidget(QWidget):
         self.label_joindate = QLabel()
         self.label_books = QLabel()
 
+        self.table_widget = QTableWidget()
+
         layout.addWidget(self.label_name)
         layout.addWidget(self.label_surname)
         layout.addWidget(self.label_joindate)
-        layout.addWidget(self.label_books)
+        layout.addWidget(self.table_widget)
 
         button_logout = QPushButton("Logout")
         button_logout.clicked.connect(self.logout)
         layout.addWidget(button_logout)
 
         self.setLayout(layout)
+        self.setStyleSheet("""
+            QMainWindow {
+                background-color: #FDF5E6;  /* Pale yellow */
+            }
+            QLabel {
+                color: #8B4513;  /* Saddle brown */
+            }
+        """)
+
 
     def set_username(self, username):
         self.username = username
@@ -96,33 +103,40 @@ class UserInfoWidget(QWidget):
             
             books_borrowed = user_info.get('books_borrowed', [])
             books_text = "Books Borrowed:\n"
-
-            # Pobranie informacji o książkach na podstawie ich ID
+            
+            self.table_widget.setColumnCount(2)
+            self.table_widget.setRowCount(len(books_borrowed))
+            self.table_widget.setHorizontalHeaderLabels(["Id","Nazwa"])
+            finger = 0
             for book_id in books_borrowed:
+                
                 books_table = database.child("books")
                 booklocation = books_table.child(book_id)
                 book_info = booklocation.get().val()
-                print(book_id)
-                print(book_info)
+                
 
                 if book_info is not None:
+                    print(finger)
                     book_name = book_info.get('book_name', '')
-                    books_text += f"ID: {book_id}, Name: {book_name}\n"
+                    bookname =  QTableWidgetItem(f'Name: {book_name}')
+                    bookid = QTableWidgetItem(f'ID: {book_id}')
+                    self.table_widget.setItem(finger,0,bookid)
+                    self.table_widget.setItem(finger,1,bookname)
+                    finger = finger + 1
 
-            
             self.label_books.setText(books_text)
 
 
     def logout(self):
-        self.stacked_widget.setCurrentIndex(0)  # Switch back to the login page
+        self.stacked_widget.setCurrentIndex(0) 
 
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("StackedWidget Example")
-        self.setGeometry(100, 100, 400, 300)
+        self.setWindowTitle("Biblioteka")
+        self.setGeometry(1400, 800, 1000, 600)
 
         self.stacked_widget = QStackedWidget(self)
 
@@ -138,6 +152,14 @@ class MainWindow(QMainWindow):
         central_widget = QWidget()
         central_widget.setLayout(main_layout)
         self.setCentralWidget(central_widget)
+        self.setStyleSheet("""
+            QMainWindow {
+                background-color: #FDF5E6;  /* Pale yellow */
+            }
+            QLabel {
+                color: #8B4513;  /* Saddle brown */
+            }
+        """)
 
 
 if __name__ == "__main__":
