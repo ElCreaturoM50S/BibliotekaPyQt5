@@ -1,3 +1,7 @@
+#login info
+#login: test
+#haslo: test
+
 import sys
 import pyrebase
 from PyQt5.QtWidgets import QApplication, QTableWidget,QMainWindow, QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QStackedWidget, QTableWidgetItem
